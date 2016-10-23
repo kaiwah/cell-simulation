@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+	<title>Bombfell Assignment</title>
+	<style type="text/css">
+	div.board-container {
+	  display: block;
+	  width: 100%;
+	  height: 100%;
+	  position: absolute;
+	  top: 0; left: 0;
+	  z-index: 100;
+	  background: red;
+	  font-size: 0; }
+	div.board-cell {
+	  display: inline-block;
+	  min-width: 10px;
+	  min-height: 10px;
+	  border: 1px solid rgba(0,0,0,0.3);
+	  box-sizing: border-box; }
+	div.board-cell.alive {
+	  position: relative;
+	  background: #fff; }
+	div.board-cell.alive::after{
+	  content: '☀';
+	  position: absolute;
+	  top: 50%; left: 50%;
+	  margin: -10px;
+	  font-size: 20px;
+	  font-weight: 600;
+	  color: red; }
+	</style>
+</head>
+<body>
+
+</body>
+<script type="text/javascript">
+	(function(){
+  var Cellular = function(params){
+    /* constructor: setup defaults */
+    var self = {
+      name: 'default',
+      rows: 10,
+      cols: 10,
+      born:  [],
+      alive: [],
+      dying: [] };
+    /* constructor: setup parameters */
+    if (typeof params === 'object' && params !== {}){
+      for (var key in params){
+        if (params.hasOwnProperty(key)){
+          self[key] = params[key]; }
+      }
+    }
+    /* constructor: setup board */
+    switch (self.name){
+      case 'blinker': 
+      	if (self.rows < 10){ self.rows = 10; }
+      	if (self.cols < 10){ self.cols = 10; }
+        self.alive.push('0-1');
+        self.alive.push('1-1');
+        self.alive.push('2-1');
+        break;
+      case 'glider':
+      	if (self.rows < 16){ self.rows = 16; }
+      	if (self.cols < 16){ self.cols = 16; }
+        self.alive.push('0-2');
+        self.alive.push('1-2');
+        self.alive.push('2-2');
+        self.alive.push('2-1');
+        self.alive.push('1-0');
+        break;
+      case 'flower':
+        if (self.rows < 16){ self.rows = 16; }
+      	if (self.cols < 16){ self.cols = 16; }
+      	self.alive.push('6-4');
+      	self.alive.push('6-5');
+      	self.alive.push('6-6');
+      	self.alive.push('6-7');
+      	self.alive.push('6-8');
+      	self.alive.push('6-9');
+      	self.alive.push('6-10');
+      	self.alive.push('7-4');
+      	self.alive.push('7-6');
+      	self.alive.push('7-8');
+      	self.alive.push('7-10');
+      	self.alive.push('8-4');
+      	self.alive.push('8-5');
+      	self.alive.push('8-6');
+      	self.alive.push('8-7');
+      	self.alive.push('8-8');
+      	self.alive.push('8-9');
+      	self.alive.push('8-10');
+      default: break;
+    }
+    /* constructor: draw board container */
+    self.container = document.createElement('div');
+    self.container.classList.add('board-container');
+    document.getElementsByTagName('body')[0].appendChild(self.container);
+    /* constructor: initial draw */
+    var alive = self.alive,
+        width = 100 / self.rows,
+        height = 100 / self.cols;
+    for (var r = 0; r < self.rows; r++){
+      for (var c = 0; c < self.cols; c++){
+        var cell = document.createElement('div');
+        cell.classList.add('board-cell');
+        cell.style.width = width + '%';
+        cell.style.height = height + '%';
+        if (alive.indexOf(r+'-'+c) !== -1){
+          cell.classList.add('alive'); }
+        self.container.appendChild(cell);
+      }
+    }
+    /* class functions */
+    self.getCellNumber = function(pos){
+      var arr = pos.split('-');
+      return parseInt(arr[0]) * this.rows + parseInt(arr[1]);
+    };
+    self.getCellRowCol = function(cell){
+      //console.log(cell);
+      return this.getCellRow(cell)+'-'+this.getCellCol(cell);
+    };
+    self.getCellRow = function(cell){
+      return Math.floor(cell/this.rows);
+    };
+    self.getCellCol = function(cell){
+      return cell % this.rows;
+    };
+    self.blink = function(el, color){
+      el.style.backgroundColor = color;
+      window.setTimeout(function(){
+        el.style.backgroundColor = null;
+      }, 50);
+    };
+    self.neighbors = function(row, col, findAlive = false){
+      /* off center cell */
+      if (row === 0 || row === (self.rows-1)
+           || col === 0 || col === (self.cols-1)){
+        return this.neighborsMethod2(row, col, findAlive);
+      } else {
+      /* on-center cell */
+        return this.neighborsMethod1(row, col, findAlive);
+      }
+    };
+    self.neighborsMethod1 = function(row, col, findAlive){
+      /* method 1: simple math 
+         ========= but does not work when off center */
+      var data = [], alive = 0,
+          nodes = self.container.children,
+          cell = (row * this.rows) + col,
+          step =  cell - 1 - this.rows;
+      while (data.length < 8){
+        data.push(step);
+        if (this.alive.indexOf(this.getCellRowCol(step)) !== -1){ alive++; }
+        this.blink(nodes[step], 'blue');
+        if (step+1 !== cell){
+          data.push(step+1);
+          if (this.alive.indexOf(this.getCellRowCol(step+1)) !== -1){ alive++; }
+          this.blink(nodes[step+1], 'blue');
+        }
+        data.push(step+2);
+        if (this.alive.indexOf(this.getCellRowCol(step+2)) !== -1){ alive++; }
+        this.blink(nodes[step+2], 'blue');
+        step += self.rows;
+      }
+      return (findAlive) ? alive : data;
+    };
+    self.neighborsMethod2 = function(row, col, findAlive){
+      /* method 2: adjacent rows and cols 
+         ========= works on-off center */
+      var data = [], alive = 0,
+          nodes = self.container.children;
+      for (var r = -1; r < 2; r++){
+        var rowOffset = row + r;
+        if (rowOffset === -1){ rowOffset = this.rows - 1; }
+        else if (rowOffset === this.rows){ rowOffset = 0; }
+        for (var c = -1; c < 2; c++){
+          var colOffset = col + c;
+          if (colOffset === -1){ colOffset = this.cols - 1; }
+          else if (colOffset === this.cols){ colOffset = 0; }
+          if (!(r === 0 && c === 0)){
+            data.push(rowOffset * this.rows + colOffset);
+            if (this.alive.indexOf(rowOffset+'-'+colOffset) !== -1){
+              alive++; }
+            this.blink(nodes[rowOffset * this.rows + colOffset], 'blue');
+          }
+        }
+      }
+      return (findAlive) ? alive : data;
+    };
+    self.fate = function(row, col){
+      /* determine the fate of a cell */
+      var aliveAroundMe = this.neighbors(row, col, true);
+      //console.log(row+'-'+col+': '+aliveAroundMe);
+      if (this.alive.indexOf(row+'-'+col) !== -1){
+        /* alive state -- check if stays alive */
+        if (aliveAroundMe !== 2 && aliveAroundMe !== 3
+             && this.dying.indexOf(row+'-'+col) === -1){
+          this.dying.push(row+'-'+col);
+        }
+      } else {
+        /* dead state -- check if reborn */
+        if (aliveAroundMe === 3 && this.born.indexOf(row+'-'+col) === -1){
+          this.born.push(row+'-'+col);
+        }
+      }
+    };
+    self.next = function(){
+      /* check the fate of every alive cell and its neighbors */
+      var context = this.alive;
+      for (var i = 0; i < context.length; i++){
+        var arr = context[i].split('-'), 
+            row = parseInt(arr[0]), col = parseInt(arr[1]),
+            n = this.neighbors(row, col);
+        this.fate(row,col);
+        for (var k = 0; k < n.length; k++){
+          this.fate(this.getCellRow(n[k]),this.getCellCol(n[k]));
+        }
+      }
+      this.redraw();
+    };
+    self.redraw = function(){
+      var dying = this.dying, born = this.born,
+          alive = this.alive,
+          nodes = this.container.children,
+          neighborClasses = document.getElementsByClassName('neighbor');
+      /* remove all dying cells */
+      for (var i = 0; i < dying.length; i++){
+        alive.splice(alive.indexOf(dying[i]),1);
+        nodes[this.getCellNumber(dying[i])].classList.remove('alive'); }
+      /* give birth to new cells */
+      for (var i = 0; i < born.length; i++){
+        alive.push(born[i]);
+        nodes[this.getCellNumber(born[i])].classList.add('alive'); }
+      /* reset attributes */
+      this.born = [];
+      this.dying = [];
+      
+    };
+    return self;
+  };
+  var game = new Cellular({name: 'flower', rows: 50, cols: 50});
+  document.onkeydown = function(e){
+    if (e.keyCode === 39){
+      game.next(); }
+  }
+})();
+</script>
+</html>
