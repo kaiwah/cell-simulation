@@ -28,3 +28,8 @@ Entire logic is coded in a JS class object and listens to the "Right Arrow" butt
 
   * When the maximum rows and columns exceed a certain amount, the application will lag due to the amount of DOM rendering
 
+#Possible Improvements:#
+
+In order to combat against the rendering lag issues, instead of using DOM elements to represent each "cell", we can create nodes to represent each cell and assign it a virtual position. 
+
+The virtual position is then rendered via absolute positioning. Thus we do not need to render each "cell" block, only the alive cells.
