@@ -16,7 +16,7 @@ Entire logic is coded in a JS class object and listens to the "Right Arrow" butt
 
 #Application Features:#
 
-	* The board has 3 board modes:
+  * The board has 3 board modes:
 		* Blinker
 		* Glider
 		* Flower
@@ -26,5 +26,5 @@ Entire logic is coded in a JS class object and listens to the "Right Arrow" butt
 
 #Known Issues:#
 
-	* When the maximum rows and columns exceed a certain amount, the application will lag due to the amount of DOM rendering
+  * When the maximum rows and columns exceed a certain amount, the application will lag due to the amount of DOM rendering
 
